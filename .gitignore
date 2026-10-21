@@ -1,0 +1,18 @@
+# JavaScript build artifacts
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Python MVP and local runtime artifacts
+.venv/
+__pycache__/
+.pytest_cache/
+work/
+output/
+*.pyc
+
+# Private inputs and generated personal patterns
+example_input.jpg
+*.local
+.DS_Store
