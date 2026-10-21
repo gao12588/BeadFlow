@@ -20,4 +20,7 @@ export type Pattern = {
   selectedIndices: number[]
   materials: Material[]
   boards: Board[]
+  safeMargin: number
+  beadSizeMm: number
+  outlineCode: string
 }

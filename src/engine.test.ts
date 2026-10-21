@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { labDistance, makeBoards, patternManifest, rgbToLab } from './engine'
+import { calculateAutoHeight, labDistance, makeBoards, outlineAroundBackground, patternManifest, rgbToLab } from './engine'
 import type { Pattern } from './types'
 
 describe('bead engine', () => {
@@ -11,5 +11,17 @@ describe('bead engine', () => {
   it('keeps manifest material total equal to grid pixels', () => {
     const pattern = { width: 2, height: 2, pixels: new Uint16Array([0, 0, 0, 0]), selectedIndices: [0], boards: [], palette: { palette_id: 'test', color_data_status: 'pending', source: {}, colors: [] }, materials: [{ code: 'A1', name: 'A1', hex: '#fff', beads: 4, test_status: 'pending' }] } as unknown as Pattern
     expect(patternManifest(pattern).material_total).toBe(patternManifest(pattern).grid.total_beads)
+  })
+  it('keeps a proportional image inside the requested safety margin', () => {
+    expect(calculateAutoHeight(100, 200, 50, 3)).toBe(94)
+    expect(calculateAutoHeight(200, 100, 50, 5)).toBe(30)
+  })
+  it('adds the dark outline only around foreground pixels', () => {
+    const outlined = outlineAroundBackground(new Uint16Array([
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    ]), 5, 5, 0, 2)
+    expect([...outlined]).toEqual([
+      0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 1, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0,
+    ])
   })
 })
