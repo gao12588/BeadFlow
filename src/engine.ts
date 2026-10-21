@@ -54,7 +54,7 @@ const materialList = (pixels: Uint16Array, palette: PaletteFile): Material[] => 
     .filter((item): item is Material => item !== null).sort((a, b) => a.code.localeCompare(b.code))
 }
 
-export function buildPattern(image: ImageData, width: number, height: number, maxColors: number, palette: PaletteFile, safeMargin = 3): Pattern {
+export function buildPattern(image: ImageData, width: number, height: number, maxColors: number, palette: PaletteFile, safeMargin = 3, withOutline = true): Pattern {
   const margin = Math.max(2, Math.min(5, Math.floor(safeMargin)))
   const allowedColors = Math.max(2, Math.min(16, Math.floor(maxColors)))
   const source = document.createElement('canvas')
@@ -79,8 +79,8 @@ export function buildPattern(image: ImageData, width: number, height: number, ma
     closest[pixel] = best; frequencies[best]++
   }
   const outlineIndex = Math.max(0, palette.colors.findIndex((item) => item.code === 'H7'))
-  // Reserve one real MARD dark colour for the construction outline when possible.
-  const selectedIndices = Array.from(frequencies, (count, index) => ({ count, index })).filter(({ count }) => count > 0).sort((a, b) => b.count - a.count || a.index - b.index).slice(0, Math.min(allowedColors - 1, palette.colors.length)).map(({ index }) => index)
+  // Reserve one real MARD dark colour for the construction outline when enabled.
+  const selectedIndices = Array.from(frequencies, (count, index) => ({ count, index })).filter(({ count }) => count > 0).sort((a, b) => b.count - a.count || a.index - b.index).slice(0, Math.min(allowedColors - (withOutline ? 1 : 0), palette.colors.length)).map(({ index }) => index)
   if (!selectedIndices.length) selectedIndices.push(0)
   const finalPixels = new Uint16Array(closest.length)
   for (let pixel = 0; pixel < finalPixels.length; pixel++) {
@@ -93,9 +93,9 @@ export function buildPattern(image: ImageData, width: number, height: number, ma
   const edgeFrequency = new Map<number, number>()
   edgeSamples.forEach((position) => edgeFrequency.set(finalPixels[position], (edgeFrequency.get(finalPixels[position]) ?? 0) + 1))
   const background = [...edgeFrequency.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0][0]
-  const outlinedPixels = outlineAroundBackground(finalPixels, width, height, background, outlineIndex)
+  const outlinedPixels = withOutline ? outlineAroundBackground(finalPixels, width, height, background, outlineIndex) : finalPixels
   const materials = materialList(outlinedPixels, palette)
-  return { width, height, pixels: outlinedPixels, palette, selectedIndices: materials.map((item) => palette.colors.findIndex((color) => color.code === item.code)), materials, boards: makeBoards(width, height), safeMargin: margin, beadSizeMm: 2.6, outlineCode: palette.colors[outlineIndex].code }
+  return { width, height, pixels: outlinedPixels, palette, selectedIndices: materials.map((item) => palette.colors.findIndex((color) => color.code === item.code)), materials, boards: makeBoards(width, height), safeMargin: margin, beadSizeMm: 2.6, outlineCode: withOutline ? palette.colors[outlineIndex].code : '未启用' }
 }
 
 export function patternManifest(pattern: Pattern, title = 'BeadFlow 拼豆施工图') {

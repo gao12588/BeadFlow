@@ -11,7 +11,7 @@ const number = (event: ChangeEvent<HTMLInputElement>) => Number(event.target.val
 export default function App() {
   const width = 50
   const [height, setHeight] = useState(50), [colors, setColors] = useState(16), [safeMargin, setSafeMargin] = useState(3), [title, setTitle] = useState('我的拼豆施工图')
-  const [image, setImage] = useState<ImageData | null>(null), [pattern, setPattern] = useState<Pattern | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState(''), [activeOutput, setActiveOutput] = useState<'pattern' | 'materials'>('pattern')
+  const [image, setImage] = useState<ImageData | null>(null), [pattern, setPattern] = useState<Pattern | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState(''), [activeOutput, setActiveOutput] = useState<'pattern' | 'materials'>('pattern'), [withOutline, setWithOutline] = useState(true)
   const previews = useMemo(() => {
     if (!pattern) return ''
     return { pattern: renderConstructionChart(pattern, title, 30).toDataURL(), materials: renderMaterialSheet(pattern, title).toDataURL() }
@@ -25,7 +25,7 @@ export default function App() {
   }
   const load = (event: ChangeEvent<HTMLInputElement>) => loadFile(event.target.files?.[0])
   const updateMargin = (value: number) => { setSafeMargin(value); if (image) setHeight(calculateAutoHeight(image.width, image.height, width, value)); setPattern(null) }
-  const generate = () => { if (!image) { setError('请先上传一张照片。'); return }; setPattern(buildPattern(image, width, height, colors, palette, safeMargin)); setActiveOutput('pattern'); setError('') }
+  const generate = () => { if (!image) { setError('请先上传一张照片。'); return }; setPattern(buildPattern(image, width, height, colors, palette, safeMargin, withOutline)); setActiveOutput('pattern'); setError('') }
   const save = async () => { if (!pattern) return; setBusy(true); try { download(await exportZip(pattern, title), 'beadflow_construction_package.zip') } catch { setError('导出失败，请重试。') } finally { setBusy(false) } }
   return <main>
     <nav><a href="#top" aria-label="BeadFlow 首页">BEADFLOW</a><span>拼豆施工图</span><span className="nav-right">本地处理 · MARD 221</span></nav>
@@ -38,6 +38,7 @@ export default function App() {
         <div className="spec-row"><span>图纸宽度 <b>{width} 格</b></span><span>拼豆规格 <b>2.6 mm</b></span><span>参考色卡 <b>MARD 221</b></span></div>
         <div className="field"><label>最大色数 <b>{colors} 色</b><input aria-label="最大色数" type="range" min="2" max="16" value={colors} onChange={(e) => { setColors(number(e)); setPattern(null) }} /></label></div>
         <div className="field"><label>安全边距 <b>{safeMargin} 格</b><input aria-label="主体安全边距" type="range" min="2" max="5" value={safeMargin} onChange={(e) => updateMargin(number(e))} /></label></div>
+        <label className="toggle-row"><input aria-label="深色外轮廓" type="checkbox" checked={withOutline} onChange={(event) => { setWithOutline(event.target.checked); setPattern(null) }} /><span><b>深色外轮廓</b><small>自动为主体边缘加入 MARD 深色豆</small></span></label>
         <div className="auto-height">自动高度 <b>{height} 格</b><span>按图片比例与安全边距计算</span></div>
         <button className="primary" onClick={generate}>生成两张施工图 <b>→</b></button>{error && <p className="error" role="alert">{error}</p>}
         <p className="note">🔒 所有计算只在你的浏览器本地完成。MARD 色值是带来源的屏幕参考，正式制作前请以实物色卡复核。</p>
